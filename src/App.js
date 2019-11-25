@@ -10,7 +10,7 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          Edit <code>src/Components/App.js</code> and save to reload.
+          Edit <code>src/Components/Fusion.js</code> and save to reload.
         </p>
       </header>
         <Fusion/>
