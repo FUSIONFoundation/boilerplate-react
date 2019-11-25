@@ -1,4 +1,5 @@
 import React from 'react';
+import Select from 'react-select'
 import * as Web3 from 'web3';
 import * as web3FusionExtend from 'web3-fusion-extend';
 
@@ -6,22 +7,26 @@ let provider = new Web3.providers.WebsocketProvider("wss://testnetpublicgateway1
 let web3 = new Web3(provider);
 web3 = web3FusionExtend.extend(web3);
 
-
 class Fusion extends React.Component {
-    constructor(props) {
-        super(props);
-        this.addOutput = this.addOutput.bind(this)
-    }
 
     state = {
         output: [],
         web3: false,
         account: undefined,
         usan: undefined,
-        assets: {}
+        assets: [],
+        sendAssetTo: undefined,
+        sendAssetAsset: undefined,
+        sendAssetAmount: undefined,
+        selectedAssetBalance: undefined,
+        createAssetName: undefined,
+        createAssetSymbol: undefined,
+        createAssetDecimals: undefined,
+        createAssetTotalSupply: undefined
+
     }
 
-    setAccount() {
+    async setAccount() {
         if (!this.state.privatekey) return
         if (this.state.privatekey.indexOf('0x') === -1) {
             this.setState({privatekey: "0x" + this.state.privatekey});
@@ -30,6 +35,9 @@ class Fusion extends React.Component {
             this.state.privatekey
         );
         this.setState({account: a});
+        if (a.address) {
+            this.getOwnedAssets(a.address);
+        }
         this.addOutput(`Succesfully decrypted wallet. Your address is : ${a.address}`);
         console.log(a.address);
     }
@@ -50,11 +58,15 @@ class Fusion extends React.Component {
     async getOwnedAssets(address) {
         let assets = await web3.fsn.allInfoByAddress(address);
         let ids = Object.keys(assets.balances);
+        console.log(assets);
+        this.addOutput(`This address owns ${ids.length} asset(s).`);
         this.setState({assets: ids})
     }
 
     async sendAsset() {
-
+        console.log(this.state.sendAssetTo);
+        console.log(this.state.sendAssetAsset);
+        console.log(this.state.sendAssetAmount);
     }
 
     async createAsset() {
@@ -91,70 +103,92 @@ class Fusion extends React.Component {
                         <hr/>
                         <div className="form-group">
                             <label>To</label>
-                            <input type="text" className="form-control" placeholder="Enter wallet address"/>
+                            <input type="text" className="form-control" placeholder="Enter wallet address"
+                                   onChange={val => {
+                                       this.setState({sendAssetTo: val.target.value})
+                                   }}/>
                             <small className="form-text text-muted">Enter a wallet address starting with 0x
                             </small>
                         </div>
                         <div className="form-group">
-                            <label>Amount</label>
-                            <input type="text" className="form-control" placeholder="Enter amount"/>
-                        </div>
-                        <button type="submit" className="btn btn-primary">Submit</button>
-                    </div>
-                    <div className={'col-md-4'}>
-                        <h6>Create Asset</h6>
-                        <hr/>
-                        <div className="form-group">
-                            <label>To</label>
-                            <input type="text" className="form-control" placeholder="Enter wallet address"/>
-                            <small className="form-text text-muted">Enter a wallet address starting with 0x
-                            </small>
-                        </div>
-                        <div className="form-group">
-                            <label>Amount</label>
-                            <input type="text" className="form-control" placeholder="Enter amount"/>
-                        </div>
-                        <button type="submit" className="btn btn-primary">Submit</button>
-                    </div>
-                    <div className={'col-md-4'}>
-                        <h6>Get Address By Notation</h6>
-                        <hr/>
-                        <div className="form-group">
-                            <label>Short Account Number</label>
-                            <input type="number" className="form-control" onChange={val => {
-                                this.setState({usan: parseInt(val.target.value)})
-                            }} placeholder="Enter wallet address"/>
-                            <small className="form-text text-muted">Enter a USAN</small>
-                        </div>
-                        <button className="btn btn-primary" onClick={() => {
-                            this.getAddressByNotation()
-                        }}>Submit
-                        </button>
-                    </div>
-                </div>
-                <div className="row">
-                    <div className="col-md-12">
-                        <div className="jumbotron p-1 mt-2">
-                            <small>OUTPUT</small>
-                            <hr className="my-1"/>
-                            {this.state.output ?
-                                this.state.output.reverse().map((val =>
-                                        <p className={'text-muted m-0'} key={''}>
-                                            {val}
-                                        </p>
-                                ))
+                            <label>Asset</label>
+                            <select className="form-control" value={this.state.sendAssetAsset} onChange={
+                                val => {
+                                    this.setState({sendAssetAsset: val})
+                                }
+                            }>
+                                {this.state.assets ?
+                                    <Select
+                                        onChange={val => {
+                                            this.setState({sendAssetAsset: val.target.value})}}
+                                            options={this.state.assets}
+                                            />
+                                            : ''}
+                                            </select>
+                                            </div>
+                                            <div className="form-group">
+                                            <label>Amount</label>
+                                            <input type="text" className="form-control" placeholder="Enter amount"
+                                            onChange={val => {
+                                                this.setState({sendAssetAmount: parseInt(val.target.value)})
+                                            }}
+                                            />
+                                            </div>
+                                            <button className="btn btn-primary" onClick={() => {
+                                            this.sendAsset()
+                                        }}>Submit
+                                            </button>
+                                            </div>
+                                            <div className={'col-md-4'}>
+                                            <h6>Create Asset</h6>
+                                            <hr/>
+                                            <div className="form-group">
+                                            <label>To</label>
+                                            <input type="text" className="form-control" placeholder="Enter wallet address"/>
+                                            <small className="form-text text-muted">Enter a wallet address starting with 0x
+                                            </small>
+                                            </div>
+                                            <div className="form-group">
+                                            <label>Amount</label>
+                                            <input type="text" className="form-control" placeholder="Enter amount"/>
+                                            </div>
+                                            <button type="submit" className="btn btn-primary">Submit</button>
+                                            </div>
+                                            <div className={'col-md-4'}>
+                                            <h6>Get Address By Notation</h6>
+                                            <hr/>
+                                            <div className="form-group">
+                                            <label>Short Account Number</label>
+                                            <input type="number" className="form-control" onChange={val => {
+                                                this.setState({usan: parseInt(val.target.value)})
+                                            }} placeholder="Enter wallet address"/>
+                                            <small className="form-text text-muted">Enter a USAN</small>
+                                            </div>
+                                            <button className="btn btn-primary" onClick={() => {
+                                                this.getAddressByNotation()
+                                            }}>Submit
+                                            </button>
+                                            </div>
+                                            </div>
+                                            <div className="row">
+                                            <div className="col-md-12">
+                                            <div className="jumbotron p-1 mt-2">
+                                            <small>OUTPUT</small>
+                                            <hr className="my-1"/>
+                                            {this.state.output ?
+                                                this.state.output.reverse().map((val =>
+                                                        <p className={'text-muted m-0'}>
+                                                            {val}
+                                                        </p>
+                                                ))
 
-                                : ''}
-                        </div>
-                    </div>
-                </div>
-                <button onClick={() => {
-                    this.getOwnedAssets("")
-                }}>Lol
-                </button>
-            </div>
-        )
-    }
-}
+                                                : ''}
+                                            </div>
+                                            </div>
+                                            </div>
+                                            </div>
+                                            )
+                                        }
+                                    }
 
-export default Fusion;
+                                    export default Fusion;
