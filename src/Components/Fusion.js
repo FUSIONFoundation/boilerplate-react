@@ -8,7 +8,7 @@ class Fusion extends React.Component {
     render() {
         return (
             <div>
-                <input placeholder={'Private Key'}></input>
+                <input className={'form-control'} placeholder={'Private Key'}></input>
             </div>
         )
     }
