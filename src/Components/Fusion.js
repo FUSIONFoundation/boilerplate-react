@@ -9,6 +9,7 @@ let web3 = new Web3(provider);
 web3 = web3FusionExtend.extend(web3);
 
 let _FSNASSETID = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+let _CHAINID = 46688
 
 class Fusion extends React.Component {
 
@@ -44,6 +45,49 @@ class Fusion extends React.Component {
         console.log(a.address);
     }
 
+    makeBigNumber (amount, decimals) {
+        // Allow .0
+        if (amount.substr(0, 1) === ".") {
+            let a = "0" + amount;
+            amount = a;
+        }
+        let pieces = amount.split(".");
+        let d = parseInt(decimals);
+        if (pieces.length === 1) {
+            amount = parseInt(amount);
+            if (isNaN(amount) || amount < 0) {
+                // error message
+                return;
+            }
+            amount = new BN(amount + "0".repeat(parseInt(decimals)));
+        } else if (pieces.length > 2) {
+            console.log("error");
+            // error message
+            return;
+        } else if (pieces[1].length > d) {
+            console.log("error");
+            return; // error
+        } else {
+            let dec = parseInt(pieces[1]);
+            let reg = new RegExp("^\\d+$"); // numbers only
+            if (isNaN(pieces[1]) || dec < 0 || !reg.test(pieces[1])) {
+                console.log("error");
+                return;
+                // return error
+            }
+            dec = pieces[1];
+            let declen = d - dec.toString().length;
+            amount = parseInt(pieces[0]);
+            if (isNaN(amount) || amount < 0) {
+                console.log("error");
+                // error message
+                return;
+            }
+            amount = new BN(amount + dec + "0".repeat(parseInt(declen)));
+        }
+        return amount;
+    };
+
     addOutput(message) {
         let d = new Date();
         let b = this.state.output;
@@ -59,15 +103,14 @@ class Fusion extends React.Component {
     async userHasFsn(address) {
         let assets = await web3.fsn.allInfoByAddress(address);
         let ids = Object.keys(assets.balances);
-        console.log(assets);
-        if(ids.includes(_FSNASSETID)){
-            this.addOutput(`This address has FSN.`);
-            let balance = await this.formatFsnBalance(assets.balances[_FSNASSETID])
-            this.setState({hasFsn: true,fsnBalance:balance})
+        if (ids.includes(_FSNASSETID)) {
+            let balance = await this.formatFsnBalance(assets.balances[_FSNASSETID]);
+            this.addOutput(`This address has ${balance} FSN.`);
+            this.setState({hasFsn: true, fsnBalance: balance})
         }
     }
 
-    async formatFsnBalance(amount){
+    async formatFsnBalance(amount) {
         let fsn = await web3.fsn.getAsset(_FSNASSETID);
         let amountBN = new BN(amount.toString());
         let decimalsBN = new BN(this.countDecimals(fsn.Decimals).toString());
@@ -75,8 +118,22 @@ class Fusion extends React.Component {
     }
 
     async sendAsset() {
-        console.log(this.state.sendAssetTo);
-        console.log(this.state.sendAssetAmount);
+        if (!this.state.sendAssetTo || !this.state.sendAssetAmount) return;
+        let value = this.makeBigNumber(this.state.sendAssetAmount.toString(),18);
+        await web3.fsntx.buildSendAssetTx({
+            from: this.state.account.address.toLowerCase(),
+            to: this.state.sendAssetTo,
+            value: value.toString(),
+            asset: _FSNASSETID,
+        })
+            .then(tx => {
+                tx.from = this.state.account.address.toLowerCase();
+                tx.chainId = parseInt(_CHAINID);
+                return web3.fsn.signAndTransmit(tx, this.state.account.signTransaction)
+                    .then(txHash => {
+                        this.addOutput(`Transaction Hash : ${txHash}`);
+                    });
+            });
     }
 
     async createAsset() {
@@ -117,7 +174,7 @@ class Fusion extends React.Component {
 
                 <div className="row mt-2">
                     <div className={'col-md-4'}>
-                        <h6>Send Asset</h6>
+                        <h6>Send Asset (FUSION)</h6>
                         <hr/>
                         <p>FSN Balance: {this.state.fsnBalance}</p>
                         <div className="form-group">
