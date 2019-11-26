@@ -2,10 +2,13 @@ import React from 'react';
 import Select from 'react-select'
 import * as Web3 from 'web3';
 import * as web3FusionExtend from 'web3-fusion-extend';
+import * as BN from 'bignumber.js';
 
 let provider = new Web3.providers.WebsocketProvider("wss://testnetpublicgateway1.fusionnetwork.io:10001");
 let web3 = new Web3(provider);
 web3 = web3FusionExtend.extend(web3);
+
+let _FSNASSETID = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
 class Fusion extends React.Component {
 
@@ -14,15 +17,14 @@ class Fusion extends React.Component {
         web3: false,
         account: undefined,
         usan: undefined,
-        assets: [],
         sendAssetTo: undefined,
-        sendAssetAsset: undefined,
         sendAssetAmount: undefined,
         selectedAssetBalance: undefined,
         createAssetName: undefined,
         createAssetSymbol: undefined,
         createAssetDecimals: undefined,
-        createAssetTotalSupply: undefined
+        createAssetTotalSupply: undefined,
+        fsnBalance: '?'
 
     }
 
@@ -36,7 +38,7 @@ class Fusion extends React.Component {
         );
         this.setState({account: a});
         if (a.address) {
-            this.getOwnedAssets(a.address);
+            this.userHasFsn(a.address);
         }
         this.addOutput(`Succesfully decrypted wallet. Your address is : ${a.address}`);
         console.log(a.address);
@@ -47,7 +49,6 @@ class Fusion extends React.Component {
         let b = this.state.output;
         b.push(`[ ${d.getHours()}:${d.getMinutes()} ] | ${message}`);
         this.setState({output: b})
-        this.forceUpdate();
     }
 
     async getAddressByNotation() {
@@ -55,22 +56,39 @@ class Fusion extends React.Component {
         this.addOutput(`Return address for USAN ${this.state.usan} is ${addr}`);
     }
 
-    async getOwnedAssets(address) {
+    async userHasFsn(address) {
         let assets = await web3.fsn.allInfoByAddress(address);
         let ids = Object.keys(assets.balances);
         console.log(assets);
-        this.addOutput(`This address owns ${ids.length} asset(s).`);
-        this.setState({assets: ids})
+        if(ids.includes(_FSNASSETID)){
+            this.addOutput(`This address has FSN.`);
+            let balance = await this.formatFsnBalance(assets.balances[_FSNASSETID])
+            this.setState({hasFsn: true,fsnBalance:balance})
+        }
+    }
+
+    async formatFsnBalance(amount){
+        let fsn = await web3.fsn.getAsset(_FSNASSETID);
+        let amountBN = new BN(amount.toString());
+        let decimalsBN = new BN(this.countDecimals(fsn.Decimals).toString());
+        return amountBN.div(decimalsBN).toString();
     }
 
     async sendAsset() {
         console.log(this.state.sendAssetTo);
-        console.log(this.state.sendAssetAsset);
         console.log(this.state.sendAssetAmount);
     }
 
     async createAsset() {
 
+    }
+
+    countDecimals = function (decimals) {
+        let returnDecimals = '1';
+        for (let i = 0; i < decimals; i++) {
+            returnDecimals += '0';
+        }
+        return parseInt(returnDecimals);
     }
 
 
@@ -101,6 +119,7 @@ class Fusion extends React.Component {
                     <div className={'col-md-4'}>
                         <h6>Send Asset</h6>
                         <hr/>
+                        <p>FSN Balance: {this.state.fsnBalance}</p>
                         <div className="form-group">
                             <label>To</label>
                             <input type="text" className="form-control" placeholder="Enter wallet address"
@@ -111,84 +130,68 @@ class Fusion extends React.Component {
                             </small>
                         </div>
                         <div className="form-group">
-                            <label>Asset</label>
-                            <select className="form-control" value={this.state.sendAssetAsset} onChange={
-                                val => {
-                                    this.setState({sendAssetAsset: val})
-                                }
-                            }>
-                                {this.state.assets ?
-                                    <Select
-                                        onChange={val => {
-                                            this.setState({sendAssetAsset: val.target.value})}}
-                                            options={this.state.assets}
-                                            />
-                                            : ''}
-                                            </select>
-                                            </div>
-                                            <div className="form-group">
-                                            <label>Amount</label>
-                                            <input type="text" className="form-control" placeholder="Enter amount"
-                                            onChange={val => {
-                                                this.setState({sendAssetAmount: parseInt(val.target.value)})
-                                            }}
-                                            />
-                                            </div>
-                                            <button className="btn btn-primary" onClick={() => {
-                                            this.sendAsset()
-                                        }}>Submit
-                                            </button>
-                                            </div>
-                                            <div className={'col-md-4'}>
-                                            <h6>Create Asset</h6>
-                                            <hr/>
-                                            <div className="form-group">
-                                            <label>To</label>
-                                            <input type="text" className="form-control" placeholder="Enter wallet address"/>
-                                            <small className="form-text text-muted">Enter a wallet address starting with 0x
-                                            </small>
-                                            </div>
-                                            <div className="form-group">
-                                            <label>Amount</label>
-                                            <input type="text" className="form-control" placeholder="Enter amount"/>
-                                            </div>
-                                            <button type="submit" className="btn btn-primary">Submit</button>
-                                            </div>
-                                            <div className={'col-md-4'}>
-                                            <h6>Get Address By Notation</h6>
-                                            <hr/>
-                                            <div className="form-group">
-                                            <label>Short Account Number</label>
-                                            <input type="number" className="form-control" onChange={val => {
-                                                this.setState({usan: parseInt(val.target.value)})
-                                            }} placeholder="Enter wallet address"/>
-                                            <small className="form-text text-muted">Enter a USAN</small>
-                                            </div>
-                                            <button className="btn btn-primary" onClick={() => {
-                                                this.getAddressByNotation()
-                                            }}>Submit
-                                            </button>
-                                            </div>
-                                            </div>
-                                            <div className="row">
-                                            <div className="col-md-12">
-                                            <div className="jumbotron p-1 mt-2">
-                                            <small>OUTPUT</small>
-                                            <hr className="my-1"/>
-                                            {this.state.output ?
-                                                this.state.output.reverse().map((val =>
-                                                        <p className={'text-muted m-0'}>
-                                                            {val}
-                                                        </p>
-                                                ))
+                            <label>Amount</label>
+                            <input type="text" className="form-control" placeholder="Enter amount"
+                                   onChange={val => {
+                                       this.setState({sendAssetAmount: parseInt(val.target.value)})
+                                   }}
+                            />
+                        </div>
+                        <button className="btn btn-primary" onClick={() => {
+                            this.sendAsset()
+                        }}>Submit
+                        </button>
+                    </div>
+                    <div className={'col-md-4'}>
+                        <h6>Create Asset</h6>
+                        <hr/>
+                        <div className="form-group">
+                            <label>To</label>
+                            <input type="text" className="form-control" placeholder="Enter wallet address"/>
+                            <small className="form-text text-muted">Enter a wallet address starting with 0x
+                            </small>
+                        </div>
+                        <div className="form-group">
+                            <label>Amount</label>
+                            <input type="text" className="form-control" placeholder="Enter amount"/>
+                        </div>
+                        <button type="submit" className="btn btn-primary">Submit</button>
+                    </div>
+                    <div className={'col-md-4'}>
+                        <h6>Get Address By Notation</h6>
+                        <hr/>
+                        <div className="form-group">
+                            <label>Short Account Number</label>
+                            <input type="number" className="form-control" onChange={val => {
+                                this.setState({usan: parseInt(val.target.value)})
+                            }} placeholder="Enter wallet address"/>
+                            <small className="form-text text-muted">Enter a USAN</small>
+                        </div>
+                        <button className="btn btn-primary" onClick={() => {
+                            this.getAddressByNotation()
+                        }}>Submit
+                        </button>
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-md-12">
+                        <div className="jumbotron p-1 mt-2">
+                            <small>OUTPUT</small>
+                            <hr className="my-1"/>
+                            {this.state.output ?
+                                this.state.output.reverse().map((val =>
+                                        <p className={'text-muted m-0'}>
+                                            {val}
+                                        </p>
+                                ))
 
-                                                : ''}
-                                            </div>
-                                            </div>
-                                            </div>
-                                            </div>
-                                            )
-                                        }
-                                    }
+                                : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+}
 
-                                    export default Fusion;
+export default Fusion;
