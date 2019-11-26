@@ -1,5 +1,4 @@
 import React from 'react';
-import Select from 'react-select'
 import * as Web3 from 'web3';
 import * as web3FusionExtend from 'web3-fusion-extend';
 import * as BN from 'bignumber.js';
@@ -46,7 +45,6 @@ class Fusion extends React.Component {
             this.userHasFsn(a.address);
         }
         this.addOutput(`Succesfully decrypted wallet. Your address is : ${a.address}`);
-        console.log(a.address);
     }
 
     /**
@@ -71,25 +69,19 @@ class Fusion extends React.Component {
             }
             amount = new BN(amount + "0".repeat(parseInt(decimals)));
         } else if (pieces.length > 2) {
-            console.log("error");
-            // error message
             return;
         } else if (pieces[1].length > d) {
-            console.log("error");
-            return; // error
+            return;
         } else {
             let dec = parseInt(pieces[1]);
             let reg = new RegExp("^\\d+$"); // numbers only
             if (isNaN(pieces[1]) || dec < 0 || !reg.test(pieces[1])) {
-                console.log("error");
                 return;
-                // return error
             }
             dec = pieces[1];
             let declen = d - dec.toString().length;
             amount = parseInt(pieces[0]);
             if (isNaN(amount) || amount < 0) {
-                console.log("error");
                 // error message
                 return;
             }
