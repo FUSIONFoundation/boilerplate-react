@@ -55,7 +55,7 @@ class Fusion extends React.Component {
      * @param decimals
      * @returns BigNumber
      */
-    makeBigNumber (amount, decimals) {
+    makeBigNumber(amount, decimals) {
         // Allow .0
         if (amount.substr(0, 1) === ".") {
             let a = "0" + amount;
@@ -148,7 +148,7 @@ class Fusion extends React.Component {
      */
     async sendAsset() {
         if (!this.state.sendAssetTo || !this.state.sendAssetAmount) return;
-        let value = this.makeBigNumber(this.state.sendAssetAmount.toString(),18);
+        let value = this.makeBigNumber(this.state.sendAssetAmount.toString(), 18);
         await web3.fsntx.buildSendAssetTx({
             from: this.state.account.address.toLowerCase(),
             to: this.state.sendAssetTo,
@@ -169,6 +169,34 @@ class Fusion extends React.Component {
      * Creates an asset based on given input
      */
     async createAsset() {
+        if (!this.state.createAssetName ||
+            !this.state.createAssetSymbol ||
+            !this.state.createAssetDecimals ||
+            !this.state.createAssetTotalSupply) return
+
+        let totalSupplyString = this.state.createAssetTotalSupply.toString();
+        let totalSupplyBN = this.makeBigNumber(totalSupplyString, this.state.createAssetDecimals);
+        let totalSupplyBNHex = "0x" + totalSupplyBN.toString(16);
+
+        let data = {
+            from: this.state.account.address,
+            name: this.state.createAssetName,
+            symbol: this.state.createAssetSymbol,
+            decimals: this.state.createAssetDecimals,
+            total: totalSupplyBNHex
+        };
+
+
+        await web3.fsntx.buildGenAssetTx(data).then(tx => {
+            tx.chainId = _CHAINID;
+            let gasPrice = web3.utils.toWei(new web3.utils.BN(100), "gwei");
+            tx.gasPrice = gasPrice.toString();
+            return web3.fsn
+                .signAndTransmit(tx, this.state.account.signTransaction)
+                .then(txHash => {
+                    this.addOutput(`Transaction Hash : ${txHash}`);
+                });
+        });
 
     }
 
@@ -240,16 +268,41 @@ class Fusion extends React.Component {
                         <h6>Create Asset</h6>
                         <hr/>
                         <div className="form-group">
-                            <label>To</label>
-                            <input type="text" className="form-control" placeholder="Enter wallet address"/>
-                            <small className="form-text text-muted">Enter a wallet address starting with 0x
-                            </small>
+                            <label>Asset Name</label>
+                            <input type="text" className="form-control" placeholder="Enter amount"
+                                   onChange={val => {
+                                       this.setState({createAssetName: val.target.value})
+                                   }}
+                            />
                         </div>
                         <div className="form-group">
-                            <label>Amount</label>
-                            <input type="text" className="form-control" placeholder="Enter amount"/>
+                            <label>Asset Symbol</label>
+                            <input type="text" className="form-control" placeholder="Enter amount"
+                                   onChange={val => {
+                                       this.setState({createAssetSymbol: val.target.value})
+                                   }}
+                            />
                         </div>
-                        <button type="submit" className="btn btn-primary">Submit</button>
+                        <div className="form-group">
+                            <label>Decimals</label>
+                            <input type="text" className="form-control" placeholder="Enter amount"
+                                   onChange={val => {
+                                       this.setState({createAssetDecimals: parseInt(val.target.value)})
+                                   }}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Total Supply</label>
+                            <input type="text" className="form-control" placeholder="Enter amount"
+                                   onChange={val => {
+                                       this.setState({createAssetTotalSupply: parseInt(val.target.value)})
+                                   }}
+                            />
+                        </div>
+                        <button type="submit" className="btn btn-primary" onClick={() => {
+                            this.createAsset()
+                        }}>Submit
+                        </button>
                     </div>
                     <div className={'col-md-4'}>
                         <h6>Get Address By Notation</h6>
