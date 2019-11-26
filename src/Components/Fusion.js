@@ -29,6 +29,9 @@ class Fusion extends React.Component {
 
     }
 
+    /**
+     * Resolves the given Private Key into an account
+     */
     async setAccount() {
         if (!this.state.privatekey) return
         if (this.state.privatekey.indexOf('0x') === -1) {
@@ -45,6 +48,12 @@ class Fusion extends React.Component {
         console.log(a.address);
     }
 
+    /**
+     * Creates a BigNumber in wei based on the amount and decimals
+     * @param amount
+     * @param decimals
+     * @returns BigNumber
+     */
     makeBigNumber (amount, decimals) {
         // Allow .0
         if (amount.substr(0, 1) === ".") {
@@ -88,6 +97,10 @@ class Fusion extends React.Component {
         return amount;
     };
 
+    /**
+     * Adds a message to the output screen
+     * @param message
+     */
     addOutput(message) {
         let d = new Date();
         let b = this.state.output;
@@ -95,11 +108,18 @@ class Fusion extends React.Component {
         this.setState({output: b})
     }
 
+    /**
+     * @returns The address related to the notation
+     */
     async getAddressByNotation() {
         let addr = await web3.fsn.getAddressByNotation(parseInt(this.state.usan));
         this.addOutput(`Return address for USAN ${this.state.usan} is ${addr}`);
     }
 
+    /**
+     * Checks whether the given address has FSN present
+     * @param address
+     */
     async userHasFsn(address) {
         let assets = await web3.fsn.allInfoByAddress(address);
         let ids = Object.keys(assets.balances);
@@ -110,6 +130,11 @@ class Fusion extends React.Component {
         }
     }
 
+    /**
+     * Returns the formatted balance for FSN
+     * @param amount
+     * @returns Formatted FSN Balance
+     */
     async formatFsnBalance(amount) {
         let fsn = await web3.fsn.getAsset(_FSNASSETID);
         let amountBN = new BN(amount.toString());
@@ -117,6 +142,9 @@ class Fusion extends React.Component {
         return amountBN.div(decimalsBN).toString();
     }
 
+    /**
+     * Sends out FSN based on given input from the form
+     */
     async sendAsset() {
         if (!this.state.sendAssetTo || !this.state.sendAssetAmount) return;
         let value = this.makeBigNumber(this.state.sendAssetAmount.toString(),18);
@@ -136,10 +164,18 @@ class Fusion extends React.Component {
             });
     }
 
+    /**
+     * Creates an asset based on given input
+     */
     async createAsset() {
 
     }
 
+    /**
+     * Counts the amount of decimals, used to divide balance with in certain functions
+     * @param decimals
+     * @returns {number}
+     */
     countDecimals = function (decimals) {
         let returnDecimals = '1';
         for (let i = 0; i < decimals; i++) {
