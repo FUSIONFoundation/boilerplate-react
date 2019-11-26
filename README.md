@@ -1,3 +1,5 @@
+![logo](https://uploads-ssl.webflow.com/5cbf7269aa4c8ec895500d90/5cc70756e6cc13a82b2f7fb1_Fusion_Light.svg)
+
 This boilerplate was created to encourage and help developers bootstrap a FUSION application as fast as possible. With several code snippets available this boilerplate gives a good example on how to utilize FUSION's functions.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
