@@ -4,12 +4,13 @@ import * as Web3 from 'web3';
 import * as web3FusionExtend from 'web3-fusion-extend';
 import * as BN from 'bignumber.js';
 
-let provider = new Web3.providers.WebsocketProvider("wss://testnetpublicgateway1.fusionnetwork.io:10001");
+let _FSNASSETID = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+let _NETWORK = "wss://testnetpublicgateway1.fusionnetwork.io:10001"
+let _CHAINID = 46688;
+
+let provider = new Web3.providers.WebsocketProvider(_NETWORK);
 let web3 = new Web3(provider);
 web3 = web3FusionExtend.extend(web3);
-
-let _FSNASSETID = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-let _CHAINID = 46688
 
 class Fusion extends React.Component {
 
