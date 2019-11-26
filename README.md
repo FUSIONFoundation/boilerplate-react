@@ -24,9 +24,9 @@ Start the application
 ```bash
 $ npm start
 ```
-
 Your browser will open ``localhost:3000``
 
+Edit the Fusion component found in ``Components/``
 
 ## Features
 
